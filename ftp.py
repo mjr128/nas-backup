@@ -23,5 +23,22 @@ class Ftp :
         s = self.ftps.dir()
         print(s)
 
+    def cd(self, dir):
+        s = self.ftps.cwd(dir)
+        print(s)
+
+    def ls(self):
+        s = self.ftps.retrlines('LIST')
+        print(s)
+
+    def download(self, filename):
+        #handle = open(path.rstrip("/") + "/" + filename.lstrip("/"), 'wb')
+        handle = open(filename, 'wb')
+        self.ftps.retrbinary('RETR %s' % filename, handle.write)
+        handle.close()
+
+    def buildFilesList(self, ):
+        self.ftps.
+
     def disconnect(self):
         self.ftps.close()
