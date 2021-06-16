@@ -12,7 +12,8 @@ class Ftp :
     def connect(self):
         self.ftps.connect(self.host, self.port)
         self.ftps.login(self.user, self.pwd)
-        s = self.ftps.prot_p()
+        self.ftps.prot_p()
+        self.ftps.voidcmd('TYPE I')
 
 
     def test(self):
@@ -37,8 +38,15 @@ class Ftp :
         self.ftps.retrbinary('RETR %s' % filename, handle.write)
         handle.close()
 
-    def buildFilesList(self, ):
-        self.ftps.
+    def buildFilesList(self, path):
+        files = []
+        for file in self.ftps.nlst():
+            self.ftps.voidcmd('TYPE I')
+            try:
+                files.append( (file, self.ftps.size(file)) )
+            except Exception as e:
+                print(e)
+        return files
 
     def disconnect(self):
         self.ftps.close()
