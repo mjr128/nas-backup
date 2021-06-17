@@ -31,10 +31,9 @@ class Ftp :
     def ls(self):
         s = self.ftps.retrlines('LIST')
 
-    def download(self, filename):
-        #handle = open(path.rstrip("/") + "/" + filename.lstrip("/"), 'wb')
-        handle = open(filename, 'wb')
-        self.ftps.retrbinary('RETR %s' % filename, handle.write)
+    def download(self, localFilename, ftpFilename):
+        handle = open(localFilename, 'wb')
+        self.ftps.retrbinary('RETR %s' % ftpFilename, handle.write)
         handle.close()
 
     def buildFilesList(self, currentPath= ''):
