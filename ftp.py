@@ -1,4 +1,5 @@
 from ftplib import FTP_TLS
+from File import File
 
 class Ftp :
 
@@ -36,19 +37,16 @@ class Ftp :
         self.ftps.retrbinary('RETR %s' % filename, handle.write)
         handle.close()
 
-    def buildFilesList(self, currentPath: str, folder: str):
-        files = []
-        self.cd(folder)
-        currentPath += folder 
+    def buildFilesList(self, currentPath= ''):
         print('currently in '+ currentPath)
         for file in self.ftps.nlst():
             self.ftps.voidcmd('TYPE I')
             try:
-                files.append( (currentPath+'/'+file, self.ftps.size(file)) )
+                yield File(currentPath+'/'+file, self.ftps.size(file))
             except Exception as e:
-                files.extend(self.buildFilesList(currentPath, file))
+                self.cd(file)
+                yield from self.buildFilesList(currentPath+'/'+file)
                 self.cd('..')
-        return files
 
     def disconnect(self):
         self.ftps.close()
