@@ -4,10 +4,10 @@ import config
 
 ftp = Ftp(config.host, config.port, config.user, config.pwd)
 ftp.connect()
-ftp.cd('Raid')
-ftp.cd('mjr128')
+#ftp.cd('Raid/mjr128')
+#ftp.cd('mjr128')
 ftp.ls()
-s = ftp.buildFilesList()
+s = ftp.buildFilesList('/', 'Raid/mjr128')
 print(s)
 
 #ftp.download('rarlinux-x64-5.9.1.tar')

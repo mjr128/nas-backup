@@ -38,14 +38,23 @@ class Ftp :
         self.ftps.retrbinary('RETR %s' % filename, handle.write)
         handle.close()
 
-    def buildFilesList(self, path):
+    def buildFilesList(self, currentPath: str, folder: str):
         files = []
+        #currentDir = path.path.rfind('/')]
+        print('Before cd in '+ self.ftps.pwd())
+        self.cd(folder)
+        currentPath += folder 
+        print('currently in '+ self.ftps.pwd())
         for file in self.ftps.nlst():
             self.ftps.voidcmd('TYPE I')
             try:
-                files.append( (file, self.ftps.size(file)) )
+                files.append( (currentPath+'/'+file, self.ftps.size(file)) )
             except Exception as e:
-                print(e)
+                try:
+                    files.extend(self.buildFilesList(currentPath, file))
+                    self.cd('..')
+                except Exception as ex:
+                    print(ex)
         return files
 
     def disconnect(self):
