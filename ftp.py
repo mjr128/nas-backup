@@ -26,11 +26,9 @@ class Ftp :
 
     def cd(self, dir):
         s = self.ftps.cwd(dir)
-        print(s)
 
     def ls(self):
         s = self.ftps.retrlines('LIST')
-        print(s)
 
     def download(self, filename):
         #handle = open(path.rstrip("/") + "/" + filename.lstrip("/"), 'wb')
@@ -40,21 +38,16 @@ class Ftp :
 
     def buildFilesList(self, currentPath: str, folder: str):
         files = []
-        #currentDir = path.path.rfind('/')]
-        print('Before cd in '+ self.ftps.pwd())
         self.cd(folder)
         currentPath += folder 
-        print('currently in '+ self.ftps.pwd())
+        print('currently in '+ currentPath)
         for file in self.ftps.nlst():
             self.ftps.voidcmd('TYPE I')
             try:
                 files.append( (currentPath+'/'+file, self.ftps.size(file)) )
             except Exception as e:
-                try:
-                    files.extend(self.buildFilesList(currentPath, file))
-                    self.cd('..')
-                except Exception as ex:
-                    print(ex)
+                files.extend(self.buildFilesList(currentPath, file))
+                self.cd('..')
         return files
 
     def disconnect(self):

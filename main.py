@@ -7,7 +7,7 @@ ftp.connect()
 #ftp.cd('Raid/mjr128')
 #ftp.cd('mjr128')
 ftp.ls()
-s = ftp.buildFilesList('/', 'Raid/mjr128')
+s = ftp.buildFilesList('/', 'Raid/Series/Californication/')
 print(s)
 
 #ftp.download('rarlinux-x64-5.9.1.tar')
