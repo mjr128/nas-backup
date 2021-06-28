@@ -20,6 +20,7 @@ class ServerFile( Base ):
     date_save = Column(DateTime)
     date_seen = Column(DateTime)
     needUpdate = Column(Boolean)
+    disk_file_id = Column(Integer)
 
     def __init__(self, fullPath, dirName, filename, size, dateSeen = datetime.date.today()):
         self.full_path = fullPath
