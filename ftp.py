@@ -1,5 +1,6 @@
 from ftplib import FTP_TLS
 from File import File
+from ServerFile import ServerFile
 
 class Ftp :
 
@@ -36,16 +37,46 @@ class Ftp :
         self.ftps.retrbinary('RETR %s' % ftpFilename, handle.write)
         handle.close()
 
-    def buildFilesList(self, currentPath= ''):
+    def buildFilesListByFile(self, currentPath= ''):
         print('currently in '+ currentPath)
         for file in self.ftps.nlst():
             self.ftps.voidcmd('TYPE I')
             try:
-                yield File(currentPath+'/'+file, self.ftps.size(file))
+                yield ServerFile(currentPath+'/'+file, currentPath, file, self.ftps.size(file))
             except Exception as e:
                 self.cd(file)
-                yield from self.buildFilesList(currentPath+'/'+file)
+                yield from self.buildFilesListByFile(currentPath+'/'+file)
                 self.cd('..')
+
+    def buildFilesListByFolder(self, currentPath= ''):
+        files = []
+        dirs = []
+        for file in self.ftps.nlst():
+            self.ftps.voidcmd('TYPE I')
+            try:
+                files.append(ServerFile(currentPath+'/'+file, currentPath, file, self.ftps.size(file)))
+            except Exception as e:
+                dirs.append(file)
+            
+        yield (currentPath, files)
+
+        for dir in dirs:
+            self.cd(dir)
+            yield from self.buildFilesListByFolder(currentPath+'/'+dir)
+            self.cd('..')
+
+    def buildFilesList(self, currentPath= ''):
+        print(currentPath)
+        files = []
+        for file in self.ftps.nlst():
+            self.ftps.voidcmd('TYPE I')
+            try:
+                files.append(ServerFile(currentPath+'/'+file, currentPath, file, self.ftps.size(file)))
+            except Exception as e:
+                self.cd(file)
+                files.extend(self.buildFilesList(currentPath+'/'+file))
+                self.cd('..')
+        return files
 
     def disconnect(self):
         self.ftps.close()
