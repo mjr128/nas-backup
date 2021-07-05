@@ -3,6 +3,8 @@ from Bdd import BDD
 import config
 import os.path
 import datetime
+import win32api
+import shutil
 from os import path
 
 from sqlalchemy import create_engine
@@ -89,7 +91,12 @@ def analyseNasData():
     print('Done')
 
 def analyseHddData():
-    print(win32api.GetLogicalDriveStrings())
+    drives = []
+    for letter in win32api.GetLogicalDriveStrings().split('\x00')[:-1]:
+        total, used, free = shutil.disk_usage(letter)
+        drives.append((letter, win32api.GetVolumeInformation(letter)[0], str(int(total/1024/1024/1024))+'Go', str(int(used/1024/1024/1024))+'Go', str(int(free/1024/1024/1024))+'Go'))
+    
+    input('Choix du disque\n'+ )
 
 
 choix = input("""
@@ -98,9 +105,9 @@ choix = input("""
 3 - Lancer la copie du NAS vers le disque dur
 Choix: """)
 
-if( choix == '1' ):
-    analyseNasData()
-if( choix == '2'):
-    analyseHddData()
+#if( choix == '1' ):
+#    analyseNasData()
+#if( choix == '2'):
+analyseHddData()
 
 ftp.disconnect()
