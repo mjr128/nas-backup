@@ -5,6 +5,7 @@ import os.path
 import datetime
 import win32api
 import shutil
+from Disk import Disk
 from os import path
 
 from sqlalchemy import create_engine
@@ -90,13 +91,46 @@ def analyseNasData():
     session.commit()
     print('Done')
 
-def analyseHddData():
+def getDiskList():
     drives = []
+    i=0
     for letter in win32api.GetLogicalDriveStrings().split('\x00')[:-1]:
         total, used, free = shutil.disk_usage(letter)
-        drives.append((letter, win32api.GetVolumeInformation(letter)[0], str(int(total/1024/1024/1024))+'Go', str(int(used/1024/1024/1024))+'Go', str(int(free/1024/1024/1024))+'Go'))
-    
-    input('Choix du disque\n'+ )
+        name, partitionID, maxfilenamlen, sysflags, filesystemtype = win32api.GetVolumeInformation(letter)
+        drives.append(Disk(letter, name, int(total/1024/1024/1024), int(used/1024/1024/1024), int(free/1024/1024/1024), partitionID))
+        i=i+1
+    return drives
+
+def buildFilesList(path):
+    print(path)
+    finalFiles = []
+    for root, dirs, files in os.walk(path):
+        print(root)
+        for file in files:
+            fullPath = os.path.join(root, file)
+            finalFiles.append( DiskFile( fullPath , root, file, os.stat(fullPath).st_size) )
+    return finalFiles
+
+def analyseHddData():
+    disks = getDiskList()
+    for disk in disks:
+        print('\nDisque '+disk.letter+'\n'+
+        'Taile: ' + str(disk.totalSize)+' Go ('+str(disk.freeSize)+' Go libres)\n'+
+        'Partition ID: ' + str(disk.partitionID) +'\n')
+    userInput = input('Choix du disque: ')
+    choosenDisk = next(d for d in disks if d.letter[0] == userInput.upper())
+    MAIN_DIR = 'nas-backup'
+    rootDir = choosenDisk.letter+MAIN_DIR
+
+    if not os.path.exists( rootDir ):
+        print('creating save directory '+MAIN_DIR)
+        os.mkdir(rootDir)
+
+    files = buildFilesList(rootDir)
+    for f in files:
+        print(f.full_path+' '+str(f.size))
+
+
 
 
 choix = input("""
@@ -105,9 +139,10 @@ choix = input("""
 3 - Lancer la copie du NAS vers le disque dur
 Choix: """)
 
-#if( choix == '1' ):
-#    analyseNasData()
-#if( choix == '2'):
-analyseHddData()
+
+if( choix == '1' ):
+    analyseNasData()
+if( choix == '2'):
+    analyseHddData()
 
 ftp.disconnect()
