@@ -18,12 +18,6 @@ from Base import Base
 
 folderToSave='/Raid/Livres_audio/Robert Jordan'
 
-print('ftp connection...')
-ftp = Ftp(config.host, config.port, config.user, config.pwd)
-ftp.connect()
-ftp.cd(folderToSave)
-print('ftp OK')
-
 print('database connection...')
 engine = create_engine('mysql+mysqlconnector://root@localhost/nas-db', echo=False)
 Base.metadata.create_all(engine)
@@ -65,6 +59,12 @@ def printFolderContent():
         session.commit()
 
 def analyseNasData():
+    print('ftp connection...')
+    ftp = Ftp(config.host, config.port, config.user, config.pwd)
+    ftp.connect()
+    ftp.cd(folderToSave)
+    print('ftp OK')
+
     print('Building file list...')
     nasFiles = ftp.buildFilesList(folderToSave)
     print('found '+str(len(nasFiles))+' files')
@@ -90,6 +90,7 @@ def analyseNasData():
         session.delete(f)
     session.commit()
     print('Done')
+    ftp.disconnect()
 
 def getDiskList():
     drives = []
@@ -101,14 +102,14 @@ def getDiskList():
         i=i+1
     return drives
 
-def buildFilesList(path):
+def buildFilesList(path, diskName):
     print(path)
     finalFiles = []
     for root, dirs, files in os.walk(path):
         print(root)
         for file in files:
             fullPath = os.path.join(root, file)
-            finalFiles.append( DiskFile( fullPath , root, file, os.stat(fullPath).st_size) )
+            finalFiles.append( DiskFile( fullPath=fullPath , dirName=root, filename=file, size=os.stat(fullPath).st_size, diskName=diskName) )
     return finalFiles
 
 def analyseHddData():
@@ -119,16 +120,19 @@ def analyseHddData():
         'Partition ID: ' + str(disk.partitionID) +'\n')
     userInput = input('Choix du disque: ')
     choosenDisk = next(d for d in disks if d.letter[0] == userInput.upper())
-    MAIN_DIR = 'nas-backup'
+    MAIN_DIR = ''
     rootDir = choosenDisk.letter+MAIN_DIR
 
     if not os.path.exists( rootDir ):
         print('creating save directory '+MAIN_DIR)
         os.mkdir(rootDir)
 
-    files = buildFilesList(rootDir)
+    files = buildFilesList(rootDir, choosenDisk.name)
+    print(str(len(files))+' fichiers trouvés')
     for f in files:
-        print(f.full_path+' '+str(f.size))
+        print(f.dir_name,f.filename, f.size)
+        session.add(f)
+    session.commit()
 
 
 
@@ -144,5 +148,3 @@ if( choix == '1' ):
     analyseNasData()
 if( choix == '2'):
     analyseHddData()
-
-ftp.disconnect()

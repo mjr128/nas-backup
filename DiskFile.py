@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from sqlalchemy import Column, Integer, Text, DateTime, Boolean
+from sqlalchemy import BIGINT, Column, Integer, Text, DateTime, Boolean, null
 
 import datetime
 from Base import Base
@@ -13,17 +13,20 @@ class DiskFile( Base ):
     full_path = Column(Text)
     dir_name = Column(Text)
     filename = Column(Text)
-    disk_uuid = Column(Text)
-    size = Column(Integer)
-    date_save = Column(DateTime)
+    disk_name = Column(Text)
+    size = Column(BIGINT)
+    #date_save = Column(DateTime)
     date_seen = Column(DateTime)
     needUpdate = Column(Boolean)
 
-    def __init__(self, fullPath, dirName, filename, size, dateSeen = datetime.date.today()):
+    def __init__(self, fullPath, dirName, filename, size, diskName, dateSeen = datetime.date.today()):
+        self.disk_file_id = hash(fullPath)
         self.full_path = fullPath
         self.dir_name = dirName
         self.filename = filename
+        self.disk_name = diskName
         self.size = size
+        #self.date_save = null
         self.date_seen = dateSeen 
         self.needUpdate = 1
 

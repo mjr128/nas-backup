@@ -19,7 +19,7 @@ class ServerFile( Base ):
     date_save = Column(DateTime)
     date_seen = Column(DateTime)
     needUpdate = Column(Boolean)
-    disk_file_id = Column(Integer, ForeignKey('DISK_FILES.disk_file_id'))
+    disk_file_id = Column(Integer)
 
     diskFile = relationship("DiskFile")
 
