@@ -1,3 +1,4 @@
+import sys
 from ftp import Ftp
 from Bdd import BDD
 import config
@@ -115,7 +116,7 @@ def buildFilesList(path, diskName):
 def analyseHddData():
     disks = getDiskList()
     for disk in disks:
-        print('\nDisque '+disk.letter+'\n'+
+        print('\nDisque '+disk.name+' '+disk.letter+'\n'+
         'Taile: ' + str(disk.totalSize)+' Go ('+str(disk.freeSize)+' Go libres)\n'+
         'Partition ID: ' + str(disk.partitionID) +'\n')
     userInput = input('Choix du disque: ')
@@ -129,22 +130,38 @@ def analyseHddData():
 
     files = buildFilesList(rootDir, choosenDisk.name)
     print(str(len(files))+' fichiers trouvés')
+    fileInThisDisk = session.query( DiskFile ).filter( DiskFile.disk_name==choosenDisk.name )
+    for f in fileInThisDisk:
+        session.delete(f)
     for f in files:
         print(f.dir_name,f.filename, f.size)
         session.add(f)
     session.commit()
 
+def analyseNasDataFromNas(path):
+    print(path)
+    finalFiles = []
+    for root, dirs, files in os.walk(path):
+        print(root)
+        for file in files:
+            fullPath = os.path.join(root, file)
+            finalFiles.append( ServerFile( fullPath , root, file, os.stat(fullPath).st_size) )
+    return finalFiles
 
 
+if(len(sys.argv) > 1):
+    pathToCheck = sys.argv[0]
+    print('checking '+pathToCheck)
+    analyseNasDataFromNas(pathToCheck)
+else:
+    choix = input("""
+    1 - Analyser les données sur le NAS
+    2 - Analyser les données sur le disque dur
+    3 - Lancer la copie du NAS vers le disque dur
+    Choix: """)
 
-choix = input("""
-1 - Analyser les données sur le NAS
-2 - Analyser les données sur le disque dur
-3 - Lancer la copie du NAS vers le disque dur
-Choix: """)
 
-
-if( choix == '1' ):
-    analyseNasData()
-if( choix == '2'):
-    analyseHddData()
+    if( choix == '1' ):
+        analyseNasData()
+    if( choix == '2'):
+        analyseHddData()

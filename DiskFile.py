@@ -9,11 +9,11 @@ from Base import Base
 class DiskFile( Base ):
     __tablename__ = 'DISK_FILES'
 
-    disk_file_id = Column(Integer, primary_key=True)
+    disk_file_id = Column(Integer, primary_key=True, autoincrement = False )
     full_path = Column(Text)
     dir_name = Column(Text)
     filename = Column(Text)
-    disk_name = Column(Text)
+    disk_name = Column(Text, nullable=False)
     size = Column(BIGINT)
     #date_save = Column(DateTime)
     date_seen = Column(DateTime)

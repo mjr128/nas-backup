@@ -10,6 +10,7 @@ class Disk:
     
     def __init__(self, letter, name, totalSize, usedSize, freeSize, partitionID):
         self.letter = letter
+        self.name = name
         self.totalSize = totalSize
         self.usedSize = usedSize
         self.freeSize = freeSize
