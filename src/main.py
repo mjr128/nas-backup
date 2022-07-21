@@ -1,10 +1,10 @@
 import sys
+import traceback
 from ftp import Ftp
 from Bdd import BDD
 import config
 import os.path
 import datetime
-import win32api
 import shutil
 from Disk import Disk
 from os import path
@@ -19,8 +19,17 @@ from Base import Base
 
 folderToSave='/Raid/Livres_audio/Robert Jordan'
 
+database = sys.argv[1]
+database_user = sys.argv[2]
+database_pw = sys.argv[3]
+if(len(sys.argv) > 4):
+    pathToCheck = sys.argv[4]
+    prefixServerFolder = sys.argv[5]
+
+database_str = 'mysql+mysqlconnector://'+database_user+':'+database_pw+'@'+database
 print('database connection...')
-engine = create_engine('mysql+mysqlconnector://root@localhost/nas-db', echo=False)
+print (database_str)
+engine = create_engine(database_str, echo=False)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -94,12 +103,16 @@ def analyseNasData():
     ftp.disconnect()
 
 def getDiskList():
+    import win32api
     drives = []
     i=0
     for letter in win32api.GetLogicalDriveStrings().split('\x00')[:-1]:
-        total, used, free = shutil.disk_usage(letter)
-        name, partitionID, maxfilenamlen, sysflags, filesystemtype = win32api.GetVolumeInformation(letter)
-        drives.append(Disk(letter, name, int(total/1024/1024/1024), int(used/1024/1024/1024), int(free/1024/1024/1024), partitionID))
+        try:
+            total, used, free = shutil.disk_usage(letter)
+            name, partitionID, maxfilenamlen, sysflags, filesystemtype = win32api.GetVolumeInformation(letter)
+            drives.append(Disk(letter, name, int(total/1024/1024/1024), int(used/1024/1024/1024), int(free/1024/1024/1024), partitionID))
+        except Exception: 
+            print('ERREUR')
         i=i+1
     return drives
 
@@ -144,13 +157,25 @@ def analyseNasDataFromNas(path):
     for root, dirs, files in os.walk(path):
         print(root)
         for file in files:
-            fullPath = os.path.join(root, file)
-            finalFiles.append( ServerFile( fullPath , root, file, os.stat(fullPath).st_size) )
-    return finalFiles
+            realFullPath = os.path.join(root, file)
+            #finalFiles.append( DiskFile( fullPath=realFullPath , dirName=root, filename=file, size=os.stat(realFullPath).st_size, diskName='diskName') )
+            finalFiles.append( ServerFile( str(os.path.join(prefixServerFolder, file)) , prefixServerFolder, str(file), os.stat(realFullPath).st_size) )
+    print(str(len(finalFiles))+ ' files found')
+    connexion =engine.connect()
+    for f in finalFiles:
+        print(f.full_path)
+        #session.add(f)
+        try:
+            connexion.execute("INSERT INTO "+ServerFile.__tablename__+" (server_file_id, full_path, dir_name, filename, size) VALUES ("+str(f.server_file_id)+",'"+ f.full_path.replace("'","\\'")+"','"+f.dir_name.replace("'","\\'")+"','"+f.filename.replace("'","\\'")+"',"+str(f.size)+")")
+        #connexion.execute("INSERT INTO "+ServerFile.__tablename__+" (server_file_id, full_path, dir_name, filename, size, date_seen) VALUES ("+str(f.server_file_id)+",'"+ f.full_path.replace("'","\'")+"','"+f.dir_name.replace("'","\'")+"','"+f.filename.replace("'","\'")+"',"+f.size+","+str(f.date_seen)+")")
+        except Exception as err:
+            print("Erreur à la sauvegarde du fichier: "+f.full_path)
+            traceback.print_exc()
+    session.commit()
+    print("Done")
 
 
-if(len(sys.argv) > 1):
-    pathToCheck = sys.argv[0]
+if('pathToCheck' in globals()):
     print('checking '+pathToCheck)
     analyseNasDataFromNas(pathToCheck)
 else:

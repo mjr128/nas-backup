@@ -20,7 +20,7 @@ class DiskFile( Base ):
     needUpdate = Column(Boolean)
 
     def __init__(self, fullPath, dirName, filename, size, diskName, dateSeen = datetime.date.today()):
-        self.disk_file_id = hash(fullPath)
+        self.disk_file_id = hash(diskName+fullPath)
         self.full_path = fullPath
         self.dir_name = dirName
         self.filename = filename
